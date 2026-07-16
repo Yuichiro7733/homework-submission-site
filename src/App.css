@@ -1123,8 +1123,8 @@ textarea::placeholder {
 .viewer-dialog {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  width: min(960px, 100%);
-  height: min(88vh, 820px);
+  width: min(1480px, 100%);
+  height: min(94vh, 1000px);
   overflow: hidden;
   border-radius: 8px;
   background: #fff;
@@ -1141,6 +1141,8 @@ textarea::placeholder {
 }
 
 .viewer-dialog header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   border-bottom: 1px solid var(--line);
 }
 
@@ -1165,19 +1167,46 @@ textarea::placeholder {
   background: var(--surface-soft);
 }
 
-.viewer-canvas {
-  display: grid;
-  min-height: 0;
-  place-items: center;
-  overflow: auto;
-  background: #222a26;
+.icon-button:disabled {
+  cursor: default;
+  opacity: 0.35;
 }
 
-.viewer-canvas img {
+.viewer-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.viewer-zoom-level {
+  width: 54px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.viewer-canvas {
+  min-height: 0;
+  overflow: auto;
+  background: #222a26;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+.viewer-image-surface {
+  display: grid;
+  min-width: 100%;
+  min-height: 100%;
+  place-items: center;
+}
+
+.viewer-image-surface img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  user-select: none;
 }
 
 .viewer-canvas iframe {
@@ -1432,6 +1461,22 @@ textarea::placeholder {
     height: 100vh;
     height: 100dvh;
     border-radius: 0;
+  }
+
+  .viewer-dialog header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 10px 12px;
+  }
+
+  .viewer-zoom-controls {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: center;
+  }
+
+  .viewer-close-button {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .viewer-dialog footer {

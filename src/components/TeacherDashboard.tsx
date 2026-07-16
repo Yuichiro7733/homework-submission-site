@@ -5,7 +5,10 @@ import {
   Image as ImageIcon,
   Inbox,
   LoaderCircle,
+  Maximize2,
   X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { signInAnonymously, type User } from 'firebase/auth'
@@ -36,6 +39,7 @@ export function TeacherDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [viewerMaterial, setViewerMaterial] = useState<MaterialSubmission | null>(null)
+  const [viewerZoom, setViewerZoom] = useState(1)
 
   useEffect(() => {
     if (!firebaseConfigured) {
@@ -100,6 +104,29 @@ export function TeacherDashboard() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!viewerMaterial) return
+
+    const previousOverflow = document.body.style.overflow
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setViewerMaterial(null)
+      if (event.key === '+' || event.key === '=') {
+        setViewerZoom((current) => Math.min(4, current + 0.25))
+      }
+      if (event.key === '-') {
+        setViewerZoom((current) => Math.max(1, current - 0.25))
+      }
+      if (event.key === '0') setViewerZoom(1)
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [viewerMaterial])
+
   const counts = useMemo(
     () => ({
       all: materials.length,
@@ -113,6 +140,20 @@ export function TeacherDashboard() {
     () => materials.filter((item) => filter === 'all' || item.status === filter),
     [filter, materials],
   )
+
+  const openViewer = (material: MaterialSubmission) => {
+    setViewerZoom(1)
+    setViewerMaterial(material)
+  }
+
+  const closeViewer = () => {
+    setViewerMaterial(null)
+    setViewerZoom(1)
+  }
+
+  const changeViewerZoom = (amount: number) => {
+    setViewerZoom((current) => Math.min(4, Math.max(1, current + amount)))
+  }
 
   const confirmMaterial = async (material: MaterialSubmission) => {
     if (!authUser) return
@@ -167,7 +208,7 @@ export function TeacherDashboard() {
         <section className="material-grid" aria-label="届いた教材の一覧">
           {visibleMaterials.map((material) => (
             <article className="material-card" key={material.id}>
-              <button className="material-thumbnail" type="button" onClick={() => setViewerMaterial(material)} aria-label={`${formatDateTime(material.submittedAt)}に届いた教材を開く`}>
+              <button className="material-thumbnail" type="button" onClick={() => openViewer(material)} aria-label={`${formatDateTime(material.submittedAt)}に届いた教材を開く`}>
                 {imageUrls[material.id] ? (
                   <img src={imageUrls[material.id]} alt="届いた教材" loading="lazy" />
                 ) : (
@@ -182,7 +223,7 @@ export function TeacherDashboard() {
                   <time>{formatDateTime(material.submittedAt)}</time>
                 </div>
                 <div className="material-card-actions">
-                  <button className="icon-text-button" type="button" onClick={() => setViewerMaterial(material)}><Eye size={17} />開く</button>
+                  <button className="icon-text-button" type="button" onClick={() => openViewer(material)}><Eye size={17} />開く</button>
                   {material.status !== 'confirmed' && (
                     <button className="primary-button compact-confirm-button" type="button" onClick={() => void confirmMaterial(material)}><Check size={17} />確認済みにする</button>
                   )}
@@ -194,15 +235,34 @@ export function TeacherDashboard() {
       )}
 
       {viewerMaterial && (
-        <div className="viewer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setViewerMaterial(null)}>
+        <div className="viewer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && closeViewer()}>
           <section className="viewer-dialog" role="dialog" aria-modal="true" aria-label="届いた教材">
             <header>
               <div><span>受信日時</span><h2>{formatDateTime(viewerMaterial.submittedAt)}</h2></div>
-              <button className="icon-button" type="button" onClick={() => setViewerMaterial(null)} aria-label="閉じる"><X size={21} /></button>
+              <div className="viewer-zoom-controls" aria-label="画像の表示倍率">
+                <button className="icon-button" type="button" onClick={() => changeViewerZoom(-0.25)} disabled={viewerZoom <= 1} aria-label="縮小" title="縮小"><ZoomOut size={19} /></button>
+                <output className="viewer-zoom-level" aria-live="polite">{Math.round(viewerZoom * 100)}%</output>
+                <button className="icon-button" type="button" onClick={() => changeViewerZoom(0.25)} disabled={viewerZoom >= 4} aria-label="拡大" title="拡大"><ZoomIn size={19} /></button>
+                <button className="icon-button" type="button" onClick={() => setViewerZoom(1)} disabled={viewerZoom === 1} aria-label="画面に合わせる" title="画面に合わせる"><Maximize2 size={18} /></button>
+              </div>
+              <button className="icon-button viewer-close-button" type="button" onClick={closeViewer} aria-label="閉じる" title="閉じる"><X size={21} /></button>
             </header>
-            <div className="viewer-canvas">
+            <div
+              className="viewer-canvas"
+              onWheel={(event) => {
+                if (!event.ctrlKey && !event.metaKey) return
+                event.preventDefault()
+                changeViewerZoom(event.deltaY < 0 ? 0.25 : -0.25)
+              }}
+            >
               {imageUrls[viewerMaterial.id] ? (
-                <img src={imageUrls[viewerMaterial.id]} alt="届いた教材の拡大表示" />
+                <div
+                  className="viewer-image-surface"
+                  style={{ width: `${viewerZoom * 100}%`, height: `${viewerZoom * 100}%` }}
+                  onDoubleClick={() => setViewerZoom((current) => current === 1 ? 2 : 1)}
+                >
+                  <img src={imageUrls[viewerMaterial.id]} alt="届いた教材の拡大表示" draggable="false" />
+                </div>
               ) : (
                 <div className="viewer-error"><ImageIcon size={32} />画像を読み込めません</div>
               )}
