@@ -1,32 +1,57 @@
-# React + TypeScript + Vite
+# まなびポスト
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+スマートフォンのカメラから宿題を撮影し、そのまま提出できる学校向けWebアプリです。教員は課題・生徒別に画像やPDFを確認し、未提出・提出済み・確認済みを管理できます。
 
-Currently, two official plugins are available:
+## 画面
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `/`：生徒提出画面
+- `/teacher`：教員ログイン・管理画面
 
-## React Compiler
+## Firebaseの初回設定
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Authentication
 
-## Expanding the Oxlint configuration
+Firebaseコンソールの「Authentication」→「Sign-in method」で、次の2つを有効にします。
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- 匿名（生徒提出用）
+- メール／パスワード（教員ログイン用）
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+### 2. Firestore DatabaseとStorage
+
+FirebaseコンソールからFirestore DatabaseとStorageを作成します。本番運用では、このリポジトリにある `firestore.rules` と `storage.rules` を必ず反映してください。
+
+```powershell
+npm install -g firebase-tools
+firebase login
+firebase use --add
+firebase deploy --only firestore:rules,storage
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### 3. 教員アカウント
+
+1. Authenticationの「Users」からメールアドレスとパスワードで教員ユーザーを作成します。
+2. 作成したユーザーのUIDをコピーします。
+3. Firestoreに `teachers` コレクションを作り、UIDと同じ名前のドキュメントを追加します。
+4. ドキュメントには `name` と `email` を文字列で登録します。
+
+`teachers/{UID}` が存在するユーザーだけが教員画面と提出ファイルを閲覧できます。
+
+## 環境変数
+
+ローカルでは `.env.example` と同じ項目を `.env.local` に設定します。VercelではProject SettingsのEnvironment Variablesへ同じ項目を登録し、再デプロイします。
+
+## 開発
+
+```powershell
+npm install
+npm run dev
+```
+
+## 運用の流れ
+
+1. 教員画面の「生徒管理」でクラス・出席番号・名前を登録します。
+2. 「課題管理」で課題を作成し、公開状態にします。
+3. 生徒はクラス・出席番号・名前を入力して撮影またはファイル選択で提出します。
+4. 教員は「提出一覧」で閲覧し、「確認済みにする」を押します。
+
+生徒名簿と提出物は「クラス＋出席番号」で照合されます。

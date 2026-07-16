@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isTeacher() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+    }
+
+    match /teachers/{teacherId} {
+      allow read: if signedIn() && (request.auth.uid == teacherId || isTeacher());
+      allow write: if false;
+    }
+
+    match /assignments/{assignmentId} {
+      allow read: if isTeacher() || (signedIn() && resource.data.active == true);
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /students/{studentId} {
+      allow read, create, update, delete: if isTeacher();
+    }
+
+    match /submissions/{submissionId} {
+      allow create: if signedIn()
+        && request.resource.data.submitterUid == request.auth.uid
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.keys().hasAll([
+          'assignmentId',
+          'assignmentTitle',
+          'className',
+          'studentName',
+          'studentNumber',
+          'identityKey',
+          'submitterUid',
+          'fileName',
+          'fileType',
+          'storagePath',
+          'status',
+          'submittedAt'
+        ]);
+      allow read: if isTeacher()
+        || (signedIn() && resource.data.submitterUid == request.auth.uid);
+      allow update: if isTeacher()
+        && request.resource.data.assignmentId == resource.data.assignmentId
+        && request.resource.data.submitterUid == resource.data.submitterUid
+        && request.resource.data.storagePath == resource.data.storagePath;
+      allow delete: if isTeacher();
+    }
+  }
+}
