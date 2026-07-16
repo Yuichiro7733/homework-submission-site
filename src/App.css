@@ -94,6 +94,20 @@
   align-items: start;
 }
 
+.simple-student-main {
+  width: min(820px, calc(100% - 48px));
+}
+
+.simple-intro {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.simple-layout {
+  grid-template-columns: minmax(0, 720px);
+  justify-content: center;
+}
+
 .submission-panel,
 .login-panel,
 .management-form,
@@ -574,6 +588,10 @@ textarea::placeholder {
   padding: 42px 0 80px;
 }
 
+.simple-teacher-main {
+  width: min(1180px, calc(100% - 48px));
+}
+
 .teacher-title-row {
   display: flex;
   align-items: flex-end;
@@ -583,6 +601,159 @@ textarea::placeholder {
 
 .teacher-title-row h1 {
   font-size: 30px;
+}
+
+.teacher-lead {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.material-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 650px;
+  margin-top: 28px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.material-summary button {
+  display: flex;
+  min-width: 0;
+  min-height: 68px;
+  padding: 12px 18px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  color: #5b6862;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.material-summary button:last-child {
+  border-right: 0;
+}
+
+.material-summary button.active {
+  box-shadow: inset 0 -3px var(--primary);
+  color: var(--ink);
+  background: #f8fbf9;
+}
+
+.material-summary strong {
+  color: var(--ink);
+  font-size: 22px;
+}
+
+.material-loading,
+.material-empty {
+  display: grid;
+  min-height: 320px;
+  margin-top: 22px;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.material-loading span,
+.material-empty strong {
+  font-size: 13px;
+}
+
+.material-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.material-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.material-thumbnail {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  place-items: center;
+  overflow: hidden;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  background: #e9eeeb;
+}
+
+.material-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.material-thumbnail > span {
+  display: grid;
+  place-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
+
+.material-card-body {
+  display: grid;
+  gap: 14px;
+  padding: 15px;
+}
+
+.material-card-body > div:first-child {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.material-card time {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.material-card-actions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+}
+
+.compact-confirm-button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.viewer-error {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 13px;
 }
 
 .compact-button {
@@ -1056,6 +1227,10 @@ textarea::placeholder {
   .camera-panel {
     order: 1;
   }
+
+  .material-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 680px) {
@@ -1128,6 +1303,30 @@ textarea::placeholder {
   .preview-actions .submit-button {
     order: -1;
     min-height: 50px;
+  }
+
+  .material-summary {
+    width: 100%;
+    max-width: none;
+  }
+
+  .material-summary button {
+    min-height: 62px;
+    padding: 10px 7px;
+    gap: 6px;
+  }
+
+  .material-summary strong {
+    font-size: 19px;
+  }
+
+  .material-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .material-card-actions {
+    grid-template-columns: 0.7fr 1.3fr;
   }
 
   .teacher-title-row {

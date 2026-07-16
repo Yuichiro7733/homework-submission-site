@@ -14,14 +14,14 @@ function App() {
   return (
     <div className="app-shell">
       <header className="site-header">
-        <a className="brand" href="/" aria-label="まなびポスト 生徒提出画面">
+        <a className="brand" href="/" aria-label="授業キャプチャ 撮影画面">
           <span className="brand-mark" aria-hidden="true">
             <GraduationCap size={21} strokeWidth={2.2} />
           </span>
-          <span>まなびポスト</span>
+          <span>授業キャプチャ</span>
         </a>
         <a className="header-link" href={isTeacherRoute ? '/' : '/teacher'}>
-          {isTeacherRoute ? '生徒提出画面' : '教員ログイン'}
+          {isTeacherRoute ? '撮影画面' : '受信一覧'}
         </a>
       </header>
 
@@ -30,7 +30,7 @@ function App() {
           fallback={
             <main className="teacher-auth-page">
               <LoaderCircle className="spin" size={30} />
-              <p>教員画面を読み込んでいます…</p>
+              <p>受信一覧を読み込んでいます…</p>
             </main>
           }
         >

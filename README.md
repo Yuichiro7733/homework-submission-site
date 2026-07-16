@@ -1,24 +1,25 @@
-# まなびポスト
+# 授業キャプチャ
 
-スマートフォンのカメラから宿題を撮影し、そのまま提出できる学校向けWebアプリです。教員は課題・生徒別に画像やPDFを確認し、未提出・提出済み・確認済みを管理できます。
+授業中の教材をスマートフォンで撮影し、そのまま送信するシンプルなWebアプリです。
 
 ## 画面
 
-- `/`：生徒提出画面
-- `/teacher`：教員ログイン・管理画面
+- `/`：撮影・送信画面
+- `/teacher`：受信した教材の一覧
 
 ## Firebaseの初回設定
 
-### 1. Authentication
+### 1. 匿名認証を有効にする
 
-Firebaseコンソールの「Authentication」→「Sign-in method」で、次の2つを有効にします。
+Firebaseコンソールの「Authentication」→「Sign-in method」で「匿名」を有効にします。画面上のログイン操作はありませんが、Firebaseへ安全に接続するために内部で匿名認証を使います。
 
-- 匿名（生徒提出用）
-- メール／パスワード（教員ログイン用）
+### 2. Firestore DatabaseとStorageを作成する
 
-### 2. Firestore DatabaseとStorage
+FirebaseコンソールからFirestore DatabaseとStorageを作成します。
 
-FirebaseコンソールからFirestore DatabaseとStorageを作成します。本番運用では、このリポジトリにある `firestore.rules` と `storage.rules` を必ず反映してください。
+### 3. セキュリティルールを反映する
+
+このリポジトリにある `firestore.rules` と `storage.rules` をFirebaseへ反映します。
 
 ```powershell
 npm install -g firebase-tools
@@ -27,14 +28,11 @@ firebase use --add
 firebase deploy --only firestore:rules,storage
 ```
 
-### 3. 教員アカウント
+プロジェクトを直接指定する場合は、次のコマンドでも反映できます。
 
-1. Authenticationの「Users」からメールアドレスとパスワードで教員ユーザーを作成します。
-2. 作成したユーザーのUIDをコピーします。
-3. Firestoreに `teachers` コレクションを作り、UIDと同じ名前のドキュメントを追加します。
-4. ドキュメントには `name` と `email` を文字列で登録します。
-
-`teachers/{UID}` が存在するユーザーだけが教員画面と提出ファイルを閲覧できます。
+```powershell
+firebase deploy --only firestore:rules,storage --project homework-submission-site
+```
 
 ## 環境変数
 
@@ -47,11 +45,11 @@ npm install
 npm run dev
 ```
 
-## 運用の流れ
+## 利用方法
 
-1. 教員画面の「生徒管理」でクラス・出席番号・名前を登録します。
-2. 「課題管理」で課題を作成し、公開状態にします。
-3. 生徒はクラス・出席番号・名前を入力して撮影またはファイル選択で提出します。
-4. 教員は「提出一覧」で閲覧し、「確認済みにする」を押します。
+1. 撮影画面で「カメラで撮影する」を押します。
+2. 教材を撮影します。
+3. 写真を確認し、「撮り直す」または「この写真を送信する」を選びます。
+4. 受信一覧で写真を開き、確認済みにします。
 
-生徒名簿と提出物は「クラス＋出席番号」で照合されます。
+受信一覧にはログインを設けていません。URLを知っている利用者は受信写真を閲覧できます。

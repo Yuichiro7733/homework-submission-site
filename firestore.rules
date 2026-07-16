@@ -6,36 +6,20 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isTeacher() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
-    }
-
-    match /teachers/{teacherId} {
-      allow read: if signedIn() && (request.auth.uid == teacherId || isTeacher());
-      allow write: if false;
-    }
-
-    match /assignments/{assignmentId} {
-      allow read: if isTeacher() || (signedIn() && resource.data.active == true);
-      allow create, update, delete: if isTeacher();
-    }
-
-    match /students/{studentId} {
-      allow read, create, update, delete: if isTeacher();
-    }
-
-    match /submissions/{submissionId} {
+    match /materials/{materialId} {
       allow create: if signedIn()
         && request.resource.data.submitterUid == request.auth.uid
-        && request.resource.data.status == 'submitted'
+        && request.resource.data.status == 'sent'
+        && request.resource.data.fileType == 'image/jpeg'
         && request.resource.data.keys().hasAll([
-          'assignmentId',
-          'assignmentTitle',
-          'className',
-          'studentName',
-          'studentNumber',
-          'identityKey',
+          'submitterUid',
+          'fileName',
+          'fileType',
+          'storagePath',
+          'status',
+          'submittedAt'
+        ])
+        && request.resource.data.keys().hasOnly([
           'submitterUid',
           'fileName',
           'fileType',
@@ -43,13 +27,15 @@ service cloud.firestore {
           'status',
           'submittedAt'
         ]);
-      allow read: if isTeacher()
-        || (signedIn() && resource.data.submitterUid == request.auth.uid);
-      allow update: if isTeacher()
-        && request.resource.data.assignmentId == resource.data.assignmentId
+      allow read: if signedIn();
+      allow update: if signedIn()
         && request.resource.data.submitterUid == resource.data.submitterUid
-        && request.resource.data.storagePath == resource.data.storagePath;
-      allow delete: if isTeacher();
+        && request.resource.data.storagePath == resource.data.storagePath
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'confirmedAt'
+        ]);
+      allow delete: if false;
     }
   }
 }

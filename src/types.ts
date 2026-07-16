@@ -1,47 +1,15 @@
-export type Assignment = {
-  id: string
-  title: string
-  description: string
-  className: string
-  dueDate: string
-  active: boolean
-  createdAt?: unknown
-}
+export type MaterialStatus = 'sent' | 'confirmed'
 
-export type Student = {
+export type MaterialSubmission = {
   id: string
-  name: string
-  className: string
-  studentNumber: string
-  identityKey: string
-  active: boolean
-  createdAt?: unknown
-}
-
-export type SubmissionStatus = 'submitted' | 'confirmed'
-
-export type Submission = {
-  id: string
-  assignmentId: string
-  assignmentTitle: string
-  className: string
-  studentName: string
-  studentNumber: string
-  identityKey: string
   submitterUid: string
   fileName: string
-  fileType: string
+  fileType: 'image/jpeg'
   storagePath: string
-  status: SubmissionStatus
+  status: MaterialStatus
   submittedAt?: unknown
   confirmedAt?: unknown
-  confirmedBy?: string
 }
-
-export const makeIdentityKey = (
-  className: string,
-  studentNumber: string,
-) => `${className.trim().toLowerCase()}::${studentNumber.trim().toLowerCase()}`
 
 export const formatDateTime = (value: unknown) => {
   if (!value || typeof value !== 'object' || !('toDate' in value)) return 'たった今'
