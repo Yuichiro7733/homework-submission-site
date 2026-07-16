@@ -1,11 +1,14 @@
 import {
   Camera,
   Check,
+  ChevronDown,
   FileImage,
   LoaderCircle,
   RefreshCw,
   Send,
   X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { onAuthStateChanged, signInAnonymously, type User } from 'firebase/auth'
@@ -16,6 +19,35 @@ import { firebaseErrorMessage } from '../lib/firebase-errors'
 
 type CaptureMode = 'idle' | 'camera' | 'preview'
 
+type CameraZoomRange = {
+  min: number
+  max: number
+  step: number
+}
+
+type ZoomCapabilities = MediaTrackCapabilities & {
+  zoom?: CameraZoomRange
+}
+
+type ZoomSettings = MediaTrackSettings & {
+  zoom?: number
+}
+
+type ZoomConstraint = MediaTrackConstraintSet & {
+  zoom: number
+}
+
+const cameraDisplayName = (device: MediaDeviceInfo, index: number) => {
+  const label = device.label.trim()
+  if (!label) return `カメラ ${index + 1}`
+
+  const normalized = label.toLowerCase()
+  if (/ultra.?wide|超広角|0[.,]5/.test(normalized)) return `広角 - ${label}`
+  if (/back|rear|environment|背面|外向き/.test(normalized)) return `背面 - ${label}`
+  if (/front|user|前面|内向き/.test(normalized)) return `前面 - ${label}`
+  return label
+}
+
 export function StudentSubmit() {
   const [authUser, setAuthUser] = useState<User | null>(null)
   const [captureMode, setCaptureMode] = useState<CaptureMode>('idle')
@@ -25,6 +57,11 @@ export function StudentSubmit() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [cameraDevices, setCameraDevices] = useState<MediaDeviceInfo[]>([])
+  const [selectedCameraId, setSelectedCameraId] = useState('')
+  const [cameraZoom, setCameraZoom] = useState(1)
+  const [cameraZoomRange, setCameraZoomRange] = useState<CameraZoomRange | null>(null)
+  const [switchingCamera, setSwitchingCamera] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
@@ -81,30 +118,90 @@ export function StudentSubmit() {
     streamRef.current = null
   }
 
+  const readCameraControls = async (stream: MediaStream) => {
+    const track = stream.getVideoTracks()[0]
+    const settings = track.getSettings() as ZoomSettings
+    let capabilities: ZoomCapabilities | null = null
+    try {
+      capabilities = typeof track.getCapabilities === 'function'
+        ? track.getCapabilities() as ZoomCapabilities
+        : null
+    } catch {
+      capabilities = null
+    }
+    const zoom = capabilities?.zoom
+
+    if (zoom && Number.isFinite(zoom.min) && Number.isFinite(zoom.max) && zoom.max > zoom.min) {
+      setCameraZoomRange({ min: zoom.min, max: zoom.max, step: zoom.step || 0.1 })
+      setCameraZoom(settings.zoom ?? Math.max(zoom.min, Math.min(1, zoom.max)))
+    } else {
+      setCameraZoomRange(null)
+      setCameraZoom(1)
+    }
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter((device) => device.kind === 'videoinput')
+      setCameraDevices(videoDevices)
+      setSelectedCameraId(settings.deviceId ?? videoDevices[0]?.deviceId ?? '')
+    } catch {
+      setCameraDevices([])
+      setSelectedCameraId(settings.deviceId ?? '')
+    }
+  }
+
   const clearCapture = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setPreviewUrl('')
     setCapturedFile(null)
   }
 
-  const startCamera = async () => {
+  const startCamera = async (deviceId?: string) => {
     setError('')
     setSuccess('')
     clearCapture()
+    setSwitchingCamera(true)
     try {
+      stopCamera()
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
+        video: deviceId
+          ? {
+              deviceId: { exact: deviceId },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            }
+          : {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
         audio: false,
       })
       streamRef.current = stream
+      await readCameraControls(stream)
       setCaptureMode('camera')
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        await videoRef.current.play()
+      }
     } catch {
       setCaptureMode('idle')
       setError('カメラを開始できませんでした。ブラウザのカメラ許可を確認してください。')
+    } finally {
+      setSwitchingCamera(false)
+    }
+  }
+
+  const changeCameraZoom = async (value: number) => {
+    const track = streamRef.current?.getVideoTracks()[0]
+    if (!track || !cameraZoomRange) return
+
+    const nextZoom = Math.min(cameraZoomRange.max, Math.max(cameraZoomRange.min, value))
+    try {
+      await track.applyConstraints({ advanced: [{ zoom: nextZoom } as ZoomConstraint] })
+      setCameraZoom(nextZoom)
+    } catch {
+      setError('このカメラでは倍率を変更できませんでした。')
     }
   }
 
@@ -143,6 +240,7 @@ export function StudentSubmit() {
 
   const cancelCamera = () => {
     stopCamera()
+    setCameraZoomRange(null)
     setCaptureMode('idle')
   }
 
@@ -211,9 +309,43 @@ export function StudentSubmit() {
               <>
                 <video ref={videoRef} playsInline muted aria-label="カメラ映像" />
                 <div className="camera-guide" aria-hidden="true" />
+                {cameraDevices.length > 1 && (
+                  <label className="camera-device-select">
+                    <Camera size={16} aria-hidden="true" />
+                    <select
+                      value={selectedCameraId}
+                      onChange={(event) => void startCamera(event.target.value)}
+                      disabled={switchingCamera}
+                      aria-label="使用するカメラを選択"
+                    >
+                      {cameraDevices.map((device, index) => (
+                        <option value={device.deviceId} key={device.deviceId}>
+                          {cameraDisplayName(device, index)}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} aria-hidden="true" />
+                  </label>
+                )}
                 <button className="camera-close" type="button" onClick={cancelCamera} aria-label="カメラを閉じる">
                   <X size={22} />
                 </button>
+                {cameraZoomRange && (
+                  <div className="camera-zoom-control">
+                    <ZoomOut size={17} aria-hidden="true" />
+                    <input
+                      type="range"
+                      min={cameraZoomRange.min}
+                      max={cameraZoomRange.max}
+                      step={cameraZoomRange.step}
+                      value={cameraZoom}
+                      onChange={(event) => void changeCameraZoom(Number(event.target.value))}
+                      aria-label="カメラの倍率"
+                    />
+                    <ZoomIn size={17} aria-hidden="true" />
+                    <output>{cameraZoom.toFixed(1)}x</output>
+                  </div>
+                )}
                 <button className="shutter" type="button" onClick={capturePhoto} aria-label="撮影する">
                   <span />
                 </button>
