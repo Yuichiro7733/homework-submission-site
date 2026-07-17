@@ -384,6 +384,54 @@ textarea::placeholder {
   inset: max(64px, 8%) 5% max(112px, 15%);
 }
 
+.camera-photo-count,
+.camera-finish {
+  position: absolute;
+  bottom: max(24px, calc(env(safe-area-inset-bottom) + 16px));
+}
+
+.camera-photo-count {
+  left: 18px;
+  display: flex;
+  min-width: 54px;
+  height: 46px;
+  padding: 0 10px;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(9, 18, 14, 0.76);
+}
+
+.camera-photo-count strong {
+  font-size: 20px;
+}
+
+.camera-photo-count span {
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.camera-finish {
+  right: 18px;
+  display: inline-flex;
+  min-height: 46px;
+  padding: 0 13px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(9, 18, 14, 0.76);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.camera-finish:disabled {
+  opacity: 0.38;
+}
+
 .shutter {
   position: absolute;
   bottom: max(22px, calc(env(safe-area-inset-bottom) + 14px));
@@ -402,6 +450,77 @@ textarea::placeholder {
   height: 50px;
   border-radius: 50%;
   background: #fff;
+}
+
+.shutter:disabled {
+  opacity: 0.58;
+}
+
+.capture-stage.capture-preview {
+  height: min(62vh, 620px);
+  min-height: 380px;
+  aspect-ratio: auto;
+}
+
+.preview-content.preview-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 10px;
+  align-content: start;
+  gap: 10px;
+  overflow-y: auto;
+  background: #111714;
+}
+
+.preview-gallery-item {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  background: #050806;
+  aspect-ratio: 4 / 3;
+}
+
+.preview-content.preview-gallery .preview-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #050806;
+}
+
+.preview-gallery-item > span {
+  position: absolute;
+  bottom: 7px;
+  left: 7px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(9, 18, 14, 0.78);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.preview-gallery-item > button {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(9, 18, 14, 0.78);
+}
+
+.preview-gallery-item > button:disabled {
+  opacity: 0.42;
 }
 
 .pdf-preview {
@@ -1345,6 +1464,14 @@ textarea::placeholder {
 
   .capture-stage {
     min-height: 230px;
+  }
+
+  .capture-stage.capture-camera {
+    min-height: 0;
+  }
+
+  .capture-stage.capture-preview {
+    min-height: 430px;
   }
 
   .preview-actions {
