@@ -3,12 +3,14 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Download,
   Eye,
   Image as ImageIcon,
   Images,
   Inbox,
   LoaderCircle,
   Maximize2,
+  Trash2,
   X,
   ZoomIn,
   ZoomOut,
@@ -22,7 +24,7 @@ import {
   serverTimestamp,
   writeBatch,
 } from 'firebase/firestore'
-import { getDownloadURL, ref } from 'firebase/storage'
+import { deleteObject, getDownloadURL, ref } from 'firebase/storage'
 import { auth, db, firebaseConfigured, storage } from '../lib/firebase'
 import { firebaseErrorMessage } from '../lib/firebase-errors'
 import { formatDateTime, type MaterialSubmission } from '../types'
@@ -86,6 +88,8 @@ export function TeacherDashboard() {
   const [viewerMaterial, setViewerMaterial] = useState<GroupedMaterial | null>(null)
   const [viewerImageIndex, setViewerImageIndex] = useState(0)
   const [viewerZoom, setViewerZoom] = useState(1)
+  const [downloadingId, setDownloadingId] = useState('')
+  const [deletingId, setDeletingId] = useState('')
 
   useEffect(() => {
     if (!firebaseConfigured) {
@@ -243,6 +247,57 @@ export function TeacherDashboard() {
     }
   }
 
+  const downloadPdf = async (material: GroupedMaterial) => {
+    const urls = (imageUrls[material.id] ?? []).filter(Boolean)
+    if (urls.length === 0) {
+      setError('PDFにする画像を読み込めませんでした。')
+      return
+    }
+
+    setError('')
+    setDownloadingId(material.id)
+    try {
+      const { downloadImagesAsPdf } = await import('../lib/download-pdf')
+      const date = new Date()
+      const dateText = [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0'),
+        '-',
+        String(date.getHours()).padStart(2, '0'),
+        String(date.getMinutes()).padStart(2, '0'),
+      ].join('')
+      await downloadImagesAsPdf(urls, `教材-${dateText}.pdf`)
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : 'PDFを作成できませんでした。')
+    } finally {
+      setDownloadingId('')
+    }
+  }
+
+  const deleteMaterial = async (material: GroupedMaterial) => {
+    const confirmed = window.confirm(`${material.files.length}枚の写真を完全に削除しますか？`)
+    if (!confirmed) return
+
+    setError('')
+    setDeletingId(material.id)
+    try {
+      await Promise.all(
+        material.files.map((file) => deleteObject(ref(storage, file.storagePath))),
+      )
+      const batch = writeBatch(db)
+      material.documentIds.forEach((documentId) => {
+        batch.delete(doc(db, 'materials', documentId))
+      })
+      await batch.commit()
+      if (viewerMaterial?.id === material.id) closeViewer()
+    } catch (deleteError) {
+      setError(firebaseErrorMessage(deleteError, '教材を削除できませんでした。'))
+    } finally {
+      setDeletingId('')
+    }
+  }
+
   const viewerUrls = viewerMaterial ? imageUrls[viewerMaterial.id] ?? [] : []
   const viewerImageUrl = viewerUrls[viewerImageIndex] ?? ''
 
@@ -307,6 +362,15 @@ export function TeacherDashboard() {
                     </span>
                     <time>{formatDateTime(material.submittedAt)}</time>
                   </div>
+                  <div className="material-card-tools">
+                    <button className="icon-text-button" type="button" onClick={() => void downloadPdf(material)} disabled={downloadingId === material.id || deletingId === material.id}>
+                      {downloadingId === material.id ? <LoaderCircle className="spin" size={17} /> : <Download size={17} />}
+                      {downloadingId === material.id ? 'PDF作成中' : 'PDF'}
+                    </button>
+                    <button className="danger-icon-button" type="button" onClick={() => void deleteMaterial(material)} disabled={deletingId === material.id || downloadingId === material.id} aria-label="削除" title="削除">
+                      {deletingId === material.id ? <LoaderCircle className="spin" size={17} /> : <Trash2 size={17} />}
+                    </button>
+                  </div>
                   <div className="material-card-actions">
                     <button className="icon-text-button" type="button" onClick={() => openViewer(material)}><Eye size={17} />{material.files.length}枚を開く</button>
                     {material.status !== 'confirmed' && (
@@ -364,11 +428,20 @@ export function TeacherDashboard() {
             </div>
             <footer>
               <div><span>状態</span><strong>{viewerMaterial.status === 'confirmed' ? '確認済み' : '新着'}</strong></div>
-              {viewerMaterial.status === 'confirmed' ? (
-                <span className="confirmed-label"><CheckCircle2 size={19} />確認済み</span>
-              ) : (
-                <button className="primary-button" type="button" onClick={() => void confirmMaterial(viewerMaterial)}><Check size={18} />確認済みにする</button>
-              )}
+              <div className="viewer-footer-actions">
+                <button className="secondary-button" type="button" onClick={() => void downloadPdf(viewerMaterial)} disabled={downloadingId === viewerMaterial.id || deletingId === viewerMaterial.id}>
+                  {downloadingId === viewerMaterial.id ? <LoaderCircle className="spin" size={18} /> : <Download size={18} />}
+                  {downloadingId === viewerMaterial.id ? 'PDF作成中' : 'PDF保存'}
+                </button>
+                <button className="danger-icon-button viewer-delete-button" type="button" onClick={() => void deleteMaterial(viewerMaterial)} disabled={deletingId === viewerMaterial.id || downloadingId === viewerMaterial.id} aria-label="削除" title="削除">
+                  {deletingId === viewerMaterial.id ? <LoaderCircle className="spin" size={18} /> : <Trash2 size={18} />}
+                </button>
+                {viewerMaterial.status === 'confirmed' ? (
+                  <span className="confirmed-label"><CheckCircle2 size={19} />確認済み</span>
+                ) : (
+                  <button className="primary-button" type="button" onClick={() => void confirmMaterial(viewerMaterial)}><Check size={18} />確認済みにする</button>
+                )}
+              </div>
             </footer>
           </section>
         </div>

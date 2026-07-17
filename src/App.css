@@ -927,6 +927,41 @@ textarea::placeholder {
   gap: 8px;
 }
 
+.material-card-actions > :only-child {
+  grid-column: 1 / -1;
+}
+
+.material-card-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.material-card-tools .icon-text-button {
+  width: 100%;
+}
+
+.danger-icon-button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #efc7c7;
+  border-radius: 6px;
+  color: #a53232;
+  background: #fff5f5;
+}
+
+.danger-icon-button:hover:not(:disabled) {
+  border-color: #dc9f9f;
+  background: #feecec;
+}
+
+.danger-icon-button:disabled {
+  opacity: 0.45;
+}
+
 .compact-confirm-button {
   min-height: 34px;
   padding: 6px 10px;
@@ -1481,6 +1516,18 @@ textarea::placeholder {
   font-weight: 800;
 }
 
+.viewer-dialog footer .viewer-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewer-delete-button {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+}
+
 @media (max-width: 900px) {
   .student-layout,
   .management-layout {
@@ -1732,6 +1779,16 @@ textarea::placeholder {
 
   .viewer-dialog footer .primary-button {
     width: 100%;
+  }
+
+  .viewer-dialog footer .viewer-footer-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .viewer-footer-actions .primary-button,
+  .viewer-footer-actions .confirmed-label {
+    grid-column: 1 / -1;
   }
 }
 
