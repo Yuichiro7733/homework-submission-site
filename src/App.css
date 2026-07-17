@@ -848,6 +848,50 @@ textarea::placeholder {
   object-fit: cover;
 }
 
+.material-photo-grid {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  gap: 2px;
+  overflow: hidden;
+  background: #222a26;
+}
+
+.material-photo-grid[data-count='1'] {
+  grid-template-columns: 1fr;
+}
+
+.material-photo-grid[data-count='2'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.material-photo-grid[data-count='3'],
+.material-photo-grid[data-count='4'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+
+.material-photo-grid[data-count='3'] img:first-child {
+  grid-row: 1 / 3;
+}
+
+.material-photo-count {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  display: inline-flex;
+  min-height: 30px;
+  padding: 0 9px;
+  align-items: center;
+  gap: 5px;
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(9, 18, 14, 0.82);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .material-thumbnail > span {
   display: grid;
   place-items: center;
@@ -1327,12 +1371,65 @@ textarea::placeholder {
   text-align: center;
 }
 
+.viewer-canvas-frame {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: #222a26;
+}
+
 .viewer-canvas {
+  width: 100%;
+  height: 100%;
   min-height: 0;
   overflow: auto;
   background: #222a26;
   overscroll-behavior: contain;
   touch-action: pan-x pan-y pinch-zoom;
+}
+
+.viewer-page-button {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  width: 44px;
+  height: 52px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(9, 18, 14, 0.72);
+  transform: translateY(-50%);
+}
+
+.viewer-page-button:disabled {
+  opacity: 0.24;
+}
+
+.viewer-page-previous {
+  left: 12px;
+}
+
+.viewer-page-next {
+  right: 12px;
+}
+
+.viewer-page-indicator {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  z-index: 3;
+  min-width: 58px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(9, 18, 14, 0.78);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  transform: translateX(-50%);
 }
 
 .viewer-image-surface {

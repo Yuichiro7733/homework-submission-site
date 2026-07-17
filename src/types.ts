@@ -13,8 +13,8 @@ export type MaterialSubmission = {
 
 export const formatDateTime = (value: unknown) => {
   if (!value || typeof value !== 'object' || !('toDate' in value)) return 'たった今'
-  const toDate = (value as { toDate: () => Date }).toDate
-  return toDate().toLocaleString('ja-JP', {
+  const date = (value as { toDate: () => Date }).toDate()
+  return date.toLocaleString('ja-JP', {
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
